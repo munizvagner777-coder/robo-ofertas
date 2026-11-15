@@ -26,17 +26,25 @@ import requests
 # Palavras que o robô usa para buscar ofertas na Shopee (vai rodando uma por vez).
 PALAVRAS_CHAVE = [
     "air fryer",
-    "panela antiaderente",
-    "pote hermético",
+    "fone bluetooth",
+    "chapinha",
     "organizador de cozinha",
-    "utensílios de cozinha",
-    "jogo de facas",
+    "smartwatch",
+    "secador de cabelo",
     "garrafa térmica",
+    "caixa de som bluetooth",
+    "kit maquiagem",
     "mop giratório",
-    "liquidificador",
-    "organizador de geladeira",
-    "escorredor de louça",
-    "tábua de corte",
+    "carregador turbo",
+    "tênis feminino",
+    "panela antiaderente",
+    "luminária led",
+    "perfume",
+    "ferramentas kit",
+    "brinquedo infantil",
+    "mochila",
+    "relógio masculino",
+    "jogo de cama",
 ]
 
 DESCONTO_MINIMO = 20        # % — só posta se tiver pelo menos esse desconto
