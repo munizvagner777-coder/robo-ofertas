@@ -1,0 +1,9 @@
+# FILA DE OFERTAS MANUAIS (ex.: Mercado Livre)
+# Uma oferta por linha, separando com | assim:
+# título | preço | link de afiliado | link da imagem (opcional)
+#
+# Exemplo:
+# Air Fryer Mondial 4L | 299,90 | https://mercadolivre.com/sec/xxxxx | https://http2.mlstatic.com/xxxx.jpg
+#
+# O robô posta estas primeiro e apaga a linha depois de postar.
+# Linhas começando com # são ignoradas.
