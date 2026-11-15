@@ -7,3 +7,4 @@
 #
 # O robô posta estas primeiro e apaga a linha depois de postar.
 # Linhas começando com # são ignoradas.
+TESTE do robô de ofertas - funcionando! | 0 | https://t.me/achadinhoscasaecozinha_ofertas | 
