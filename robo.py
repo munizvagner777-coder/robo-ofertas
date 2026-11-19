@@ -10,6 +10,7 @@ respeitando o intervalo mínimo, o limite por dia e o horário de silêncio.
 """
 
 import hashlib
+import re
 import html
 import json
 import os
@@ -23,28 +24,58 @@ import requests
 # CONFIGURAÇÕES — pode mudar à vontade
 # =====================================================================
 
-# Palavras que o robô usa para buscar ofertas na Shopee (vai rodando uma por vez).
+# NICHO: TUDO PARA CASA.
+# Cada item é (categoria, palavra de busca). A lista está intercalada por
+# categoria para que dois posts seguidos não sejam do mesmo cômodo.
 PALAVRAS_CHAVE = [
-    "air fryer",
-    "fone bluetooth",
-    "chapinha",
-    "organizador de cozinha",
-    "smartwatch",
-    "secador de cabelo",
-    "garrafa térmica",
-    "caixa de som bluetooth",
-    "kit maquiagem",
-    "mop giratório",
-    "carregador turbo",
-    "tênis feminino",
-    "panela antiaderente",
-    "luminária led",
-    "perfume",
-    "ferramentas kit",
-    "brinquedo infantil",
-    "mochila",
-    "relógio masculino",
-    "jogo de cama",
+    ("Cozinha", "air fryer"),
+    ("Organização", "organizador de gaveta"),
+    ("Limpeza", "mop giratório"),
+    ("Quarto", "jogo de cama"),
+    ("Casa Inteligente", "lâmpada inteligente"),
+    ("Banheiro", "organizador de banheiro"),
+    ("Decoração", "luminária decorativa"),
+    ("Cozinha", "pote hermético"),
+    ("Jardim", "mangueira de jardim"),
+    ("Sala", "manta para sofá"),
+    ("Lavanderia", "varal de chão"),
+    ("Utilidades", "aspirador de pó portátil"),
+    ("Cozinha", "panela antiaderente"),
+    ("Organização", "caixa organizadora"),
+    ("Decoração", "quadro decorativo"),
+    ("Limpeza", "escova de limpeza elétrica"),
+    ("Quarto", "travesseiro"),
+    ("Casa Inteligente", "tomada inteligente"),
+    ("Cozinha", "organizador de geladeira"),
+    ("Banheiro", "tapete de banheiro"),
+    ("Jardim", "vaso de planta"),
+    ("Sala", "almofada decorativa"),
+    ("Lavanderia", "cesto de roupa"),
+    ("Utilidades", "umidificador de ar"),
+    ("Cozinha", "utensílios de cozinha silicone"),
+    ("Organização", "prateleira organizadora"),
+    ("Decoração", "fita de led"),
+    ("Limpeza", "rodo mágico"),
+    ("Quarto", "cortina blackout"),
+    ("Casa Inteligente", "câmera de segurança wifi"),
+    ("Cozinha", "garrafa térmica"),
+    ("Banheiro", "porta escova de dente"),
+    ("Jardim", "luminária solar jardim"),
+    ("Sala", "tapete sala"),
+    ("Utilidades", "ventilador"),
+    ("Cozinha", "escorredor de louça"),
+    ("Organização", "cabide"),
+    ("Decoração", "espelho decorativo"),
+    ("Limpeza", "dispenser de detergente"),
+    ("Utilidades", "mixer de mão"),
+]
+
+# Produtos com estas palavras no nome são descartados (fora do nicho casa).
+PALAVRAS_PROIBIDAS = [
+    "carro", "automotivo", "automotiva", "moto", "capinha", "celular", "maquiagem", "batom",
+    "camiseta", "vestido", "calça", "tênis", "sandália", "bolsa feminina",
+    "brinquedo", "pet", "cachorro", "gato", "game", "videogame", "fone de ouvido",
+    "perfume", "lingerie", "biquíni",
 ]
 
 DESCONTO_MINIMO = 20        # % — só posta se tiver pelo menos esse desconto
@@ -104,7 +135,10 @@ def vendidos(n):
 
 def montar_texto(o):
     nome = html.escape(o["nome"][:120])
-    linhas = [f"🔥 <b>{nome}</b>", ""]
+    linhas = []
+    if o.get("categoria"):
+        linhas.append(f"🏠 <b>#{o['categoria'].replace(' ', '')}</b>")
+    linhas += [f"🔥 <b>{nome}</b>", ""]
     if o.get("preco_antigo") and o.get("desconto"):
         linhas.append(f"De <s>{reais(o['preco_antigo'])}</s> por <b>{reais(o['preco'])}</b>  (-{o['desconto']}%)")
     elif o.get("preco"):
@@ -211,7 +245,7 @@ def buscar_shopee(palavra):
 def pegar_da_shopee(estado):
     ja_postados = set(estado["postados"])
     for _ in range(len(PALAVRAS_CHAVE)):
-        palavra = PALAVRAS_CHAVE[estado["indice_palavra"] % len(PALAVRAS_CHAVE)]
+        categoria, palavra = PALAVRAS_CHAVE[estado["indice_palavra"] % len(PALAVRAS_CHAVE)]
         estado["indice_palavra"] += 1
         print(f"Buscando na Shopee: {palavra}")
         for p in buscar_shopee(palavra):
@@ -221,11 +255,15 @@ def pegar_da_shopee(estado):
             vendas = int(p.get("sales") or 0)
             if pid in ja_postados or not p.get("offerLink"):
                 continue
+            nome_min = (p.get("productName") or "").lower()
+            if any(re.search(r"\b" + re.escape(w) + r"\b", nome_min) for w in PALAVRAS_PROIBIDAS):
+                continue
             if desconto < DESCONTO_MINIMO or nota < NOTA_MINIMA or vendas < VENDAS_MINIMAS:
                 continue
             preco = float(p.get("price") or 0)
             antigo = preco / (1 - desconto / 100) if 0 < desconto < 100 else None
-            return {"id": pid, "nome": p.get("productName", ""), "preco": preco,
+            return {"id": pid, "categoria": categoria,
+                    "nome": p.get("productName", ""), "preco": preco,
                     "preco_antigo": antigo, "desconto": desconto, "nota": nota,
                     "vendas": vendas, "imagem": p.get("imageUrl", ""),
                     "link": p["offerLink"]}
